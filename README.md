@@ -1,1 +1,476 @@
-[index.html.zip](https://github.com/user-attachments/files/33944494/index.html.zip)
+-[index.html](https://github.com/user-attachments/files/33944553/index.html)
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1118">
+  <title>Sheriff Robot View</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1118;
+      --panel: #111d27;
+      --line: #294b5b;
+      --cyan: #36e6ff;
+      --green: #42ff9e;
+      --red: #ff4242;
+      --muted: #a8bdcc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at top, #132635 0%, var(--bg) 62%);
+      color: #eaf6ff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 26px 16px 18px;
+      text-align: center;
+    }
+    .eyebrow {
+      color: var(--cyan);
+      font: 700 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .24em;
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(25px, 4vw, 40px);
+      letter-spacing: .04em;
+    }
+    .subtitle {
+      color: var(--muted);
+      margin: 10px auto 0;
+      max-width: 650px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    main { width: min(1100px, 94vw); margin: 0 auto 40px; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(250px, .8fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .panel {
+      background: rgba(17, 29, 39, .92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 18px 55px rgba(0,0,0,.2);
+    }
+    .panel-head {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(41,75,91,.7);
+    }
+    .panel-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+    .live-pill {
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #607483;
+    }
+    .dot.on { background: var(--green); box-shadow: 0 0 12px var(--green); }
+    .screen {
+      position: relative;
+      background: #030609;
+      aspect-ratio: 4 / 3;
+      width: 100%;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .hud {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      min-width: 145px;
+      background: rgba(0,0,0,.82);
+      color: var(--cyan);
+      border: 1px solid rgba(54,230,255,.75);
+      border-radius: 10px;
+      padding: 9px 12px;
+      text-align: left;
+      font: 700 13px/1.8 ui-monospace, SFMono-Regular, Menlo, monospace;
+      box-shadow: 0 0 20px rgba(54,230,255,.08);
+    }
+    .screen-label {
+      position: absolute;
+      left: 12px; bottom: 12px;
+      color: rgba(255,255,255,.75);
+      font: 10px ui-monospace, monospace;
+      letter-spacing: .12em;
+      background: rgba(0,0,0,.5);
+      padding: 6px 8px;
+      border-radius: 5px;
+    }
+    .controls { padding: 16px; }
+    .button-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      appearance: none; border: 0; border-radius: 9px;
+      padding: 12px 16px; font-weight: 800; font-size: 13px;
+      cursor: pointer; transition: transform .15s, opacity .15s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .5; cursor: wait; transform: none; }
+    .primary { background: var(--cyan); color: #06141b; }
+    .secondary { background: #293946; color: #f3f8fc; border: 1px solid #3d5363; }
+    .status {
+      margin-top: 14px; padding: 12px 13px; border-radius: 9px;
+      background: rgba(0,0,0,.22); color: var(--muted);
+      font-size: 13px; line-height: 1.5; min-height: 44px;
+    }
+    .status.good { color: var(--green); }
+    .status.warn { color: var(--red); }
+    .side { display: grid; gap: 16px; }
+    .metrics { padding: 14px; display: grid; gap: 10px; }
+    .metric {
+      background: rgba(3,8,12,.45);
+      border: 1px solid rgba(41,75,91,.65);
+      border-radius: 11px;
+      padding: 12px;
+    }
+    .metric-top { display: flex; justify-content: space-between; align-items: center; }
+    .metric-name { color: var(--muted); font-size: 11px; letter-spacing: .1em; font-weight: 800; }
+    .metric-value { color: var(--cyan); font: 700 23px ui-monospace, monospace; margin-top: 8px; }
+    .metric-desc { color: #7890a0; font-size: 11px; margin-top: 5px; line-height: 1.5; }
+    .axis-icon { color: var(--cyan); font-weight: 900; }
+    .info { padding: 16px; }
+    .info h2 { font-size: 13px; margin: 0 0 12px; letter-spacing: .1em; }
+    .info p, .info li { color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .info ul { padding-left: 18px; margin: 0; }
+    .footer { text-align: center; color: #688091; font-size: 11px; padding: 18px 12px 0; line-height: 1.7; }
+    video { display: none; }
+    @media (max-width: 780px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { grid-template-columns: 1fr; }
+      .hud { top: 7px; right: 7px; padding: 6px 8px; min-width: 120px; font-size: 11px; }
+      header { padding-top: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">VISION SYSTEM / 001</div>
+    <h1>SHERIFF ROBOT VIEW</h1>
+    <p class="subtitle">실시간 얼굴 추적 · 화면 좌표 분석 · 접근 경고</p>
+  </header>
+
+  <main>
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">CAMERA FEED</div>
+          <div class="live-pill"><span class="dot" id="liveDot"></span><span id="liveLabel">OFFLINE</span></div>
+        </div>
+        <div class="screen">
+          <canvas id="view" width="640" height="480" aria-label="카메라 추적 화면"></canvas>
+          <div class="hud" id="hud">X: ---<br>Y: ---<br>Z: ---</div>
+          <div class="screen-label">FACE TRACKING / MIRROR VIEW</div>
+        </div>
+        <div class="controls">
+          <div class="button-row">
+            <button class="primary" id="startBtn">카메라 시작</button>
+            <button class="secondary" id="stopBtn" disabled>카메라 종료</button>
+          </div>
+          <div class="status" id="status" role="status">시작 버튼을 누르고 카메라 권한을 허용하세요.</div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel">
+          <div class="panel-head"><div class="panel-title">LIVE COORDINATES</div></div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-top"><span class="metric-name">X / HORIZONTAL</span><span class="axis-icon">↔</span></div>
+              <div class="metric-value" id="xValue">---</div>
+              <div class="metric-desc">화면 중앙 기준 좌우 위치 (픽셀)</div>
+            </div>
+            <div class="metric">
+              <div class="metric-top"><span class="metric-name">Y / VERTICAL</span><span class="axis-icon">↕</span></div>
+              <div class="metric-value" id="yValue">---</div>
+              <div class="metric-desc">화면 중앙 기준 위아래 위치 (픽셀)</div>
+            </div>
+            <div class="metric">
+              <div class="metric-top"><span class="metric-name">Z / ESTIMATED DISTANCE</span><span class="axis-icon">◎</span></div>
+              <div class="metric-value" id="zValue">---</div>
+              <div class="metric-desc">얼굴 크기로 계산한 거리 추정치 (cm)</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel info">
+          <h2>SYSTEM STATUS</h2>
+          <p id="targetStatus">대기 중 — 카메라를 시작하세요.</p>
+          <h2>사용 방법</h2>
+          <ul>
+            <li>카메라 시작을 누르고 권한을 허용합니다.</li>
+            <li>얼굴을 좌우·위아래로 움직여 X/Y 값 변화를 확인합니다.</li>
+            <li>카메라에 가까이 다가가면 Z 추정값이 작아집니다.</li>
+            <li>얼굴 너비가 화면 너비의 35%를 넘으면 접근 경고가 표시됩니다.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+    <div class="footer">
+      개인정보 보호: 영상은 이 페이지 안에서 처리되며 녹화·업로드하지 않습니다.<br>
+      Z는 얼굴 너비를 이용한 추정값입니다. 실제 거리는 카메라 보정에 따라 달라질 수 있습니다.
+    </div>
+  </main>
+
+  <video id="camera" autoplay playsinline muted></video>
+
+  <script type="module">
+    import { FaceDetector, FilesetResolver } from
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("view");
+    const ctx = canvas.getContext("2d");
+    const hud = document.getElementById("hud");
+    const status = document.getElementById("status");
+    const targetStatus = document.getElementById("targetStatus");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const liveDot = document.getElementById("liveDot");
+    const liveLabel = document.getElementById("liveLabel");
+    const xValue = document.getElementById("xValue");
+    const yValue = document.getElementById("yValue");
+    const zValue = document.getElementById("zValue");
+
+    let detector = null;
+    let stream = null;
+    let running = false;
+    let animationId = null;
+    let lastVideoTime = -1;
+    let busy = false;
+
+    // 거리 추정용 가정값. 실제 cm 측정에는 카메라 보정이 필요합니다.
+    const KNOWN_FACE_WIDTH_CM = 15;
+    const FOCAL_LENGTH_PX = 600;
+    const WARN_RATIO = 0.35;
+
+    function setStatus(message, kind = "") {
+      status.textContent = message;
+      status.className = "status" + (kind ? " " + kind : "");
+    }
+
+    async function loadDetector() {
+      if (detector) return;
+      setStatus("얼굴 인식 모델을 불러오는 중입니다...");
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      );
+      detector = await FaceDetector.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+          delegate: "CPU"
+        },
+        runningMode: "VIDEO",
+        minDetectionConfidence: 0.5
+      });
+    }
+
+    async function startCamera() {
+      if (running) return;
+      startBtn.disabled = true;
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("이 브라우저에서 카메라를 사용할 수 없습니다. HTTPS 주소로 접속하세요.");
+        }
+        await loadDetector();
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        });
+        video.srcObject = stream;
+        await video.play();
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        running = true;
+        lastVideoTime = -1;
+        liveDot.classList.add("on");
+        liveLabel.textContent = "LIVE";
+        setStatus("카메라 연결 완료. 얼굴을 화면에 보여주세요.", "good");
+        targetStatus.textContent = "얼굴을 찾는 중...";
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        animationId = requestAnimationFrame(processFrame);
+      } catch (err) {
+        setStatus("실행 실패: " + (err?.message || String(err)), "warn");
+        targetStatus.textContent = "카메라 또는 모델을 시작하지 못했습니다.";
+        stopCamera();
+      } finally {
+        if (!running) startBtn.disabled = false;
+      }
+    }
+
+    function drawBaseFrame() {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.translate(W, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, W, H);
+      ctx.restore();
+
+      ctx.strokeStyle = "rgba(255,255,255,.85)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 12, H / 2);
+      ctx.lineTo(W / 2 + 12, H / 2);
+      ctx.moveTo(W / 2, H / 2 - 12);
+      ctx.lineTo(W / 2, H / 2 + 12);
+      ctx.stroke();
+    }
+
+    function updateFace(detections) {
+      const W = canvas.width, H = canvas.height;
+      if (!detections.length) {
+        hud.innerHTML = "X: ---<br>Y: ---<br>Z: ---";
+        xValue.textContent = "---";
+        yValue.textContent = "---";
+        zValue.textContent = "---";
+        targetStatus.textContent = "얼굴을 찾는 중...";
+        targetStatus.style.color = "";
+        return;
+      }
+
+      const face = detections.reduce((best, current) => {
+        const a = best.boundingBox.width * best.boundingBox.height;
+        const b = current.boundingBox.width * current.boundingBox.height;
+        return b > a ? current : best;
+      });
+      const b = face.boundingBox;
+
+      // MediaPipe 상자를 거울처럼 반전된 표시 좌표로 변환
+      const x = W - b.originX - b.width;
+      const y = b.originY;
+      const w = b.width;
+      const h = b.height;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+
+      const X = Math.round(cx - W / 2);
+      const Y = Math.round(H / 2 - cy);
+      const Z = KNOWN_FACE_WIDTH_CM * FOCAL_LENGTH_PX / Math.max(w, 1);
+      const tooClose = w / W > WARN_RATIO;
+      const color = tooClose ? "#ff4242" : "#42ff9e";
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = "#36e6ff";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#36e6ff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(W / 2, H / 2);
+      ctx.lineTo(cx, cy);
+      ctx.stroke();
+
+      ctx.font = "bold 16px system-ui";
+      ctx.fillStyle = color;
+      ctx.fillText(tooClose ? "WARNING! TOO CLOSE!" : "TARGET LOCKED",
+                   Math.max(8, x), Math.max(22, y - 9));
+
+      const zText = Z.toFixed(1) + " cm";
+      hud.innerHTML = `X: ${X}<br>Y: ${Y}<br>Z: ${zText}`;
+      xValue.textContent = String(X);
+      yValue.textContent = String(Y);
+      zValue.textContent = zText;
+
+      targetStatus.textContent = tooClose
+        ? "경고: 얼굴이 설정한 크기 기준을 넘었습니다."
+        : "얼굴 추적 중 — 정상";
+      targetStatus.style.color = color;
+    }
+
+    function processFrame() {
+      if (!running) return;
+      if (video.readyState < 2 || busy) {
+        animationId = requestAnimationFrame(processFrame);
+        return;
+      }
+      drawBaseFrame();
+      if (video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        busy = true;
+        try {
+          const result = detector.detectForVideo(video, performance.now());
+          updateFace(result.detections || []);
+        } catch (err) {
+          console.error(err);
+          setStatus("얼굴 인식 중 오류가 발생했습니다.", "warn");
+        } finally {
+          busy = false;
+        }
+      }
+      animationId = requestAnimationFrame(processFrame);
+    }
+
+    function stopCamera() {
+      running = false;
+      if (animationId !== null) cancelAnimationFrame(animationId);
+      animationId = null;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      video.srcObject = null;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hud.innerHTML = "X: ---<br>Y: ---<br>Z: ---";
+      xValue.textContent = "---";
+      yValue.textContent = "---";
+      zValue.textContent = "---";
+      liveDot.classList.remove("on");
+      liveLabel.textContent = "OFFLINE";
+      targetStatus.textContent = "대기 중 — 카메라를 시작하세요.";
+      targetStatus.style.color = "";
+      stopBtn.disabled = true;
+      startBtn.disabled = false;
+      setStatus("카메라가 종료되었습니다.");
+    }
+
+    startBtn.addEventListener("click", startCamera);
+    stopBtn.addEventListener("click", stopCamera);
+    window.addEventListener("pagehide", stopCamera);
+
+    // 초기 대기 화면
+    ctx.fillStyle = "#030609";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#1c3948";
+    ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+    ctx.fillStyle = "#36e6ff";
+    ctx.font = "bold 18px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("SHERIFF ROBOT VIEW", canvas.width / 2, canvas.height / 2 - 8);
+    ctx.fillStyle = "#7890a0";
+    ctx.font = "13px system-ui";
+    ctx.fillText("카메라 시작 버튼을 누르세요", canvas.width / 2, canvas.height / 2 + 20);
+    ctx.textAlign = "start";
+  </script>
+</body>
+</html>
